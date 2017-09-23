@@ -3,7 +3,7 @@
     <item
         android:id="@+id/hello"
         android:icon="@mipmap/hello"
-        android:title="@string/hello_name"/>
+        android:title="@string/hello_weather"/>
     <item
         android:id="@+id/about"
         android:icon="@mipmap/about"

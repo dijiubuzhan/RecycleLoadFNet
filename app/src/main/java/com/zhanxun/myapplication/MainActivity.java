@@ -1,5 +1,6 @@
 package com.zhanxun.myapplication;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
+import com.zhanxun.myapplication.bean.NewsModel;
 
 import java.io.IOException;
 
@@ -150,7 +152,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                m_drawerLayout.openDrawer(GravityCompat.START);
+                if (m_drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    m_drawerLayout.closeDrawers();
+                }else {
+                    m_drawerLayout.openDrawer(GravityCompat.START);
+                }
                 break;
             default:
                 break;
@@ -164,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(MenuItem item) {
                 switch (item.getItemId()) {
                     case R.id.hello:
-                        Toast.makeText(MainActivity.this, "welcome to schoool", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(MainActivity.this,WeatherActivity.class));
                         break;
                     case R.id.about:
                         Toast.makeText(MainActivity.this, "I am green", Toast.LENGTH_SHORT).show();

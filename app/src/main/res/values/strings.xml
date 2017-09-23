@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">My Application</string>
     <string name="head_name">Stupid boy</string>
-    <string name="hello_name">Welcome</string>
+    <string name="hello_weather">查询天气</string>
     <string name="about_name">About</string>
+    <string name="weather_input_hint">请输入城市名拼音</string>
+    <string name="weather_check">查询</string>
 </resources>

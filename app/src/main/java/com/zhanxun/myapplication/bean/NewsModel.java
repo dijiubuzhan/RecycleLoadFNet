@@ -1,4 +1,4 @@
-package com.zhanxun.myapplication;
+package com.zhanxun.myapplication.bean;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ public class NewsModel {
     private long date;
     private List<Story> stories;
 
-    class Story{
+    public class Story{
         private List<String> images;
         private int type;
         private long id;
