@@ -20,9 +20,15 @@ import com.zhanxun.myapplication.bean.WeatherModel;
 
 import java.util.List;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -42,7 +48,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     public void check(View v) {
 
-        String city = m_editText.getText().toString().trim();
+        final String city = m_editText.getText().toString().trim();
         if (TextUtils.isEmpty(city)) {
             Toast.makeText(this, "请输入城市名", Toast.LENGTH_SHORT).show();
             return;
@@ -52,27 +58,41 @@ public class WeatherActivity extends AppCompatActivity {
                 .baseUrl("https://free-api.heweather.com/v5/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
-        ApiService service = retrofit.create(ApiService.class);
+        final ApiService service = retrofit.create(ApiService.class);
 
-        Call<WeatherModel> call = service.postRequest(city, "96217f3f638b4d61ba3581bb184d889b");
-        call.enqueue(new Callback<WeatherModel>() {
+        Observable.create(new ObservableOnSubscribe<List<WeatherModel.HeWeather5Bean>>() {
             @Override
-            public void onResponse(Call<WeatherModel> call, Response<WeatherModel> response) {
-                try {
-                    loadData(response.body().getHeWeather5());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            public void subscribe(@NonNull ObservableEmitter<List<WeatherModel.HeWeather5Bean>> HeWeather5Beans) throws Exception {
+                Call<WeatherModel> call = service.postRequest(city, "96217f3f638b4d61ba3581bb184d889b");
+                List<WeatherModel.HeWeather5Bean> heWeather5Beans = call.execute().body().getHeWeather5();
+                HeWeather5Beans.onNext(heWeather5Beans);
             }
+        })
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<List<WeatherModel.HeWeather5Bean>>() {
+                    @Override
+                    public void onSubscribe(@NonNull Disposable d) {
+                        Log.d(TAG, "onSubscribe: ");
+                    }
 
-            @Override
-            public void onFailure(Call<WeatherModel> call, Throwable t) {
-                t.printStackTrace();
-                Log.i(TAG, "onFailure(),," + t.getMessage());
-            }
-        });
+                    @Override
+                    public void onNext(@NonNull List<WeatherModel.HeWeather5Bean> heWeather5Been) {
+                        Log.d(TAG, "onNext: ");
+                        loadData(heWeather5Been);
+                    }
 
+                    @Override
+                    public void onError(@NonNull Throwable e) {
+                        Log.d(TAG, "onError: " + e.getMessage());
+                        Toast.makeText(WeatherActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
 
+                    @Override
+                    public void onComplete() {
+                        Log.d(TAG, "onComplete: ");
+                    }
+                });
     }
 
     private void loadData(List<WeatherModel.HeWeather5Bean> heWeather5) {
