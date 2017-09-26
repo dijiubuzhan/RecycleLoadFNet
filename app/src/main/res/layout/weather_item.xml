@@ -20,6 +20,7 @@
             android:layout_height="wrap_content"/>
 
         <TextView
+            android:layout_marginLeft="10dp"
             android:id="@+id/night_txt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
@@ -36,6 +37,7 @@
             android:layout_height="wrap_content"/>
 
         <TextView
+            android:layout_marginLeft="10dp"
             android:id="@+id/min_tem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
