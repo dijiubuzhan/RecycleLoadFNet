@@ -8,8 +8,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.squareup.okhttp.MultipartBuilder;
-import com.squareup.okhttp.RequestBody;
 import com.zhanxun.myapplication.bean.WeatherModel;
 
 import java.util.List;
@@ -33,7 +31,7 @@ public class WeatherActivity extends AppCompatActivity {
 
 
     public void check(View v){
-        //OkHttpClient mOkHttpClient = new OkHttpClient();
+
         String city=m_editText.getText().toString().trim();
         if (TextUtils.isEmpty(city)) {
             Toast.makeText(this,"请输入城市名",Toast.LENGTH_SHORT).show();
@@ -46,12 +44,6 @@ public class WeatherActivity extends AppCompatActivity {
                 .build();
         ApiService service=retrofit.create(ApiService.class);
 
-        MultipartBuilder multipartBuilder=new MultipartBuilder();
-        RequestBody requestBody=multipartBuilder.type(MultipartBuilder.FORM)
-                .addFormDataPart("city",city)
-                .addFormDataPart("key","96217f3f638b4d61ba3581bb184d889b")
-                .build();
-        //Call<ResponseBody> call=service.check(requestBody);
         Call<WeatherModel> call=service.postRequest(city,"96217f3f638b4d61ba3581bb184d889b");
         call.enqueue(new Callback<WeatherModel>() {
             @Override
@@ -74,7 +66,15 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void loadData(List<WeatherModel.HeWeather5Bean> heWeather5) {
-        Log.i(TAG, "loadData,," + heWeather5.toString());
+        WeatherModel.HeWeather5Bean heWeather=heWeather5.get(0);
+        Log.d(TAG, "loadData: "+(heWeather!=null));
+        if (!TextUtils.isEmpty(heWeather.getStatus()) && heWeather.getStatus().equalsIgnoreCase("ok")) {
+            Log.i(TAG, "loadData,,update time=" +heWeather.getBasic().getUpdate().getLoc());
+            for (WeatherModel.HeWeather5Bean.DailyForecastBean dailyForecastBean : heWeather.getDaily_forecast()) {
+                Log.d(TAG, "loadData, data="+dailyForecastBean.getDate()+",maxTmp:"+dailyForecastBean.getTmp().getMax()+",txt:"+dailyForecastBean.getCond().getTxt_d());
+            }
+        }
+
 
     }
 
