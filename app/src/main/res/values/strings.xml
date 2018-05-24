@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">My News</string>
     <string name="head_name">Stupid boy</string>
     <string name="hello_weather">查询天气</string>
     <string name="about_name">About</string>

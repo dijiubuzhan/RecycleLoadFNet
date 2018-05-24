@@ -20,15 +20,11 @@ import com.zhanxun.myapplication.bean.WeatherModel;
 
 import java.util.List;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -60,30 +56,30 @@ public class WeatherActivity extends AppCompatActivity {
                 .build();
         final ApiService service = retrofit.create(ApiService.class);
 
-        Observable.create(new ObservableOnSubscribe<List<WeatherModel.HeWeather5Bean>>() {
-            @Override
-            public void subscribe(@NonNull ObservableEmitter<List<WeatherModel.HeWeather5Bean>> HeWeather5Beans) throws Exception {
-                Call<WeatherModel> call = service.postRequest(city, "96217f3f638b4d61ba3581bb184d889b");
-                List<WeatherModel.HeWeather5Bean> heWeather5Beans = call.execute().body().getHeWeather5();
-                HeWeather5Beans.onNext(heWeather5Beans);
-            }
-        })
+        service.postRequest(city, "96217f3f638b4d61ba3581bb184d889b")
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .map(new Function<WeatherModel, List<WeatherModel.HeWeather5Bean>>() {
+
+                    @Override
+                    public List<WeatherModel.HeWeather5Bean> apply(WeatherModel weatherModel) throws Exception {
+                        return weatherModel.getHeWeather5();
+                    }
+                })
                 .subscribe(new Observer<List<WeatherModel.HeWeather5Bean>>() {
                     @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-                        Log.d(TAG, "onSubscribe: ");
+                    public void onSubscribe(Disposable d) {
+
                     }
 
                     @Override
-                    public void onNext(@NonNull List<WeatherModel.HeWeather5Bean> heWeather5Been) {
+                    public void onNext(List<WeatherModel.HeWeather5Bean> heWeather5Beans) {
                         Log.d(TAG, "onNext: ");
-                        loadData(heWeather5Been);
+                        loadData(heWeather5Beans);
                     }
 
                     @Override
-                    public void onError(@NonNull Throwable e) {
+                    public void onError(Throwable e) {
                         Log.d(TAG, "onError: " + e.getMessage());
                         Toast.makeText(WeatherActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
@@ -93,6 +89,7 @@ public class WeatherActivity extends AppCompatActivity {
                         Log.d(TAG, "onComplete: ");
                     }
                 });
+
     }
 
     private void loadData(List<WeatherModel.HeWeather5Bean> heWeather5) {

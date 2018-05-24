@@ -2,6 +2,7 @@ package com.zhanxun.myapplication;
 
 import com.zhanxun.myapplication.bean.WeatherModel;
 
+import io.reactivex.Observable;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
@@ -16,6 +17,6 @@ public interface ApiService {
 
     @POST("forecast")
     @FormUrlEncoded
-    Call<WeatherModel> postRequest(@Field("city") String city, @Field("key") String key);
+    Observable<WeatherModel> postRequest(@Field("city") String city, @Field("key") String key);
 
 }
