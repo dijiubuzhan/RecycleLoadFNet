@@ -1,14 +1,15 @@
 package com.zhanxun.myapplication;
 
+import android.app.ActionBar;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,13 +19,22 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+
 import com.zhanxun.myapplication.bean.NewsModel;
 
 import java.io.IOException;
+
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "FirstDemo";
@@ -56,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         m_recycleView = (RecyclerView) findViewById(R.id.recycler_view);
-        ActionBar actionBar = getSupportActionBar();
+        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
         actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setDisplayShowHomeEnabled(true);
@@ -90,45 +100,43 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadData() {
         Log.d(TAG, "loadData: ");
-        OkHttpClient mOkHttpClient = new OkHttpClient();
-        //创建一个Request
-        final Request request = new Request.Builder()
-                .url("http://news-at.zhihu.com/api/4/news/latest")
-                .build();
-        //new call
-        mOkHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
-                runOnUiThread(new Runnable() {
+        RxRetrofitUtil.getInstance()
+                .baseUrl("http://news-at.zhihu.com/api/4/news/")
+                .createSApi(ApiService.class)
+                .getNews()
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<ResponseBody>() {
                     @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "update error", Toast.LENGTH_SHORT).show();
-                        m_swipeRefreshLayout.setRefreshing(false);
+                    public void onSubscribe(Disposable d) {
+
                     }
-                });
 
-                Log.d(TAG, "onFailure(),e=" + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Response response) throws IOException {
-                try {
-                    final String result = response.body().string();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                    @Override
+                    public void onNext(ResponseBody responseBody) {
+                        try {
+                            String result = responseBody.string();
                             jsonInfos(result);
                             Toast.makeText(MainActivity.this, "update successfully", Toast.LENGTH_SHORT).show();
                             m_swipeRefreshLayout.setRefreshing(false);
+                            Log.d(TAG, "onResponse(),result=" + result);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    });
-                    Log.d(TAG, "onResponse(),result=" + result);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    }
 
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        Toast.makeText(MainActivity.this, "update error", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "onError: Throwable e="+e.getMessage());
+                        m_swipeRefreshLayout.setRefreshing(false);
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
     }
 
 

@@ -26,6 +26,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class WeatherActivity extends AppCompatActivity {
@@ -50,13 +51,10 @@ public class WeatherActivity extends AppCompatActivity {
             return;
         }
 
-        Retrofit retrofit = new Retrofit.Builder()
+        RxRetrofitUtil.getInstance()
                 .baseUrl("https://free-api.heweather.com/v5/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        final ApiService service = retrofit.create(ApiService.class);
-
-        service.postRequest(city, "96217f3f638b4d61ba3581bb184d889b")
+                .createSApi(ApiService.class)
+                .postRequest(city, "96217f3f638b4d61ba3581bb184d889b")
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(new Function<WeatherModel, List<WeatherModel.HeWeather5Bean>>() {

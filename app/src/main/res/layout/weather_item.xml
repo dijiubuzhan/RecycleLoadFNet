@@ -5,6 +5,7 @@
               android:orientation="vertical">
 
     <TextView
+        android:textColor="@color/weatherColor"
         android:id="@+id/data"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
@@ -15,11 +16,13 @@
         android:orientation="horizontal">
 
         <TextView
+            android:textColor="@color/weatherColor"
             android:id="@+id/day_txt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <TextView
+            android:textColor="@color/weatherColor"
             android:layout_marginLeft="10dp"
             android:id="@+id/night_txt"
             android:layout_width="wrap_content"
@@ -32,11 +35,13 @@
         android:orientation="horizontal">
 
         <TextView
+            android:textColor="@color/weatherColor"
             android:id="@+id/max_tem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
         <TextView
+            android:textColor="@color/weatherColor"
             android:layout_marginLeft="10dp"
             android:id="@+id/min_tem"
             android:layout_width="wrap_content"
