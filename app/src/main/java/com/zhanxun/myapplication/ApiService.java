@@ -1,5 +1,6 @@
 package com.zhanxun.myapplication;
 
+import com.zhanxun.myapplication.bean.MultiNewsModel;
 import com.zhanxun.myapplication.bean.WeatherModel;
 
 import io.reactivex.Observable;
@@ -10,6 +11,7 @@ import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 
 /**
@@ -25,4 +27,9 @@ public interface ApiService {
 
     @GET("latest")
     Observable<ResponseBody> getNews();
+
+    @GET("http://is.snssdk.com/api/news/feed/v62/?iid=5034850950&device_id=6096495334&refer=1&count=20&aid=13")
+    Observable<MultiNewsModel> getNewsArticle(
+            @Query("category") String category,
+            @Query("max_behot_time") String maxBehotTime);
 }

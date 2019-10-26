@@ -1,6 +1,7 @@
 package com.zhanxun.myapplication;
 
 import android.app.ActionBar;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -20,14 +21,21 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 
+import com.google.gson.Gson;
+import com.zhanxun.myapplication.bean.MultiNewsArticleDataModel;
+import com.zhanxun.myapplication.bean.MultiNewsModel;
 import com.zhanxun.myapplication.bean.NewsModel;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -44,13 +52,18 @@ public class MainActivity extends AppCompatActivity {
     NewsModel news;
     private DrawerLayout m_drawerLayout;
     private NavigationView m_NavigationView;
+    private Gson gson = new Gson();
+    private List<MultiNewsArticleDataModel> oldItems=new ArrayList<>();
+    private List<MultiNewsArticleDataModel> dataModelList=new ArrayList<>();
+    private int lastItemCount;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         iniView();
-        iniData();
+        loadData();
     }
 
     private void iniView() {
@@ -75,85 +88,84 @@ public class MainActivity extends AppCompatActivity {
         if (m_drawerLayout != null) {
             setDrawerContent(m_NavigationView);
         }
+
+        m_RecycleAdapter = new RecycleAdapter(MainActivity.this, oldItems);
+        m_recycleView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        m_recycleView.setHasFixedSize(true);
+        m_recycleView.setItemAnimator(new DefaultItemAnimator());
+        m_recycleView.addItemDecoration(new ListItemDecoration(this, LinearLayoutManager.VERTICAL));
+        m_recycleView.setAdapter(m_RecycleAdapter);
+        m_recycleView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                int itemCount = layoutManager.getItemCount();
+                int lastPosition = layoutManager.findLastCompletelyVisibleItemPosition();
+
+                if (lastItemCount != itemCount && lastPosition == itemCount - 1) {
+                    lastItemCount = itemCount;
+                    loadData();
+                }
+            }
+        });
     }
 
-    private void iniData() {
-
-        SharedPreferences sp = this.getSharedPreferences("collectPolicy", 0);
-        String last_info = sp.getString("collectPolicy", "123");
-        Log.d(TAG, "iniData(),last_info=" + last_info);
-        if (TextUtils.isEmpty(last_info) || last_info.equals("123")) {
-            loadData();
-            return;
-        }
-        news = JsonTools.jsonObj(last_info, NewsModel.class);
-        if (news != null) {
-            m_RecycleAdapter = new RecycleAdapter(MainActivity.this, news.getStories());
-            m_recycleView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-            m_recycleView.setHasFixedSize(true);
-            m_recycleView.setItemAnimator(new DefaultItemAnimator());
-            m_recycleView.addItemDecoration(new ListItemDecoration(this, LinearLayoutManager.VERTICAL));
-            m_recycleView.setAdapter(m_RecycleAdapter);
-        }
-
-    }
 
     private void loadData() {
         Log.d(TAG, "loadData: ");
         RxRetrofitUtil.getInstance()
-                .baseUrl("http://news-at.zhihu.com/api/4/news/")
+                .baseUrl("http://toutiao.com/")
                 .createSApi(ApiService.class)
-                .getNews()
+                .getNewsArticle("",String.valueOf(System.currentTimeMillis() / 1000))
                 .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<ResponseBody>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
+                .switchMap((Function< MultiNewsModel, Observable<MultiNewsArticleDataModel>>)multiNewsModel->{
+                    List<MultiNewsArticleDataModel> dataList=new ArrayList<>();
+                    for (MultiNewsModel.DataBean datum : multiNewsModel.getData()) {
+                        dataList.add(gson.fromJson(datum.getContent(),MultiNewsArticleDataModel.class));
                     }
-
-                    @Override
-                    public void onNext(ResponseBody responseBody) {
-                        try {
-                            String result = responseBody.string();
-                            jsonInfos(result);
-                            Toast.makeText(MainActivity.this, "update successfully", Toast.LENGTH_SHORT).show();
-                            m_swipeRefreshLayout.setRefreshing(false);
-                            Log.d(TAG, "onResponse(),result=" + result);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    return Observable.fromIterable(dataList);
+                })
+                .toList()
+                .map(list -> {
+                    // 过滤重复新闻(与本次刷新的数据比较,因为使用了2个请求,数据会有重复)
+                    for (int i = 0; i < list.size() - 1; i++) {
+                        for (int j = list.size() - 1; j > i; j--) {
+                            if (list.get(j).getTitle().equals(list.get(i).getTitle())) {
+                                list.remove(j);
+                            }
                         }
                     }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        Toast.makeText(MainActivity.this, "update error", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "onError: Throwable e="+e.getMessage());
-                        m_swipeRefreshLayout.setRefreshing(false);
+                    return list;
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(list -> {
+                    if (null != list && list.size() > 0) {
+                        doSetAdapter(list);
+                    } else {
+                        Toast.makeText(MainActivity.this, "no more data", Toast.LENGTH_SHORT).show();
                     }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
+                    m_swipeRefreshLayout.setRefreshing(false);
+                }, throwable -> {
+                    Toast.makeText(MainActivity.this, "update error", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "onError: Throwable e="+throwable.getMessage());
+                    m_swipeRefreshLayout.setRefreshing(false);
                 });
     }
 
-
-    private void jsonInfos(String result) {
-        SharedPreferences sp = this.getSharedPreferences("collectPolicy", 0);
-        String policy = sp.getString("collectPolicy", "123");
-        if (!TextUtils.isEmpty(policy) && policy.equals(result)) {
-            //不做修改
-            Log.d(TAG, "downInfos,jsonInfos,same policy");
-        } else {
-            Log.d(TAG, "downInfos,jsonInfos,parser policy");
-            SharedPreferences jsonText = this.getSharedPreferences("collectPolicy", 0);
-            jsonText.edit().clear();
-            jsonText.edit().putString("collectPolicy", result).commit();
-            iniData();
+    private void doSetAdapter(List<MultiNewsArticleDataModel> list) {
+        if (dataModelList.size()>150) {
+            dataModelList.clear();
         }
+        dataModelList.addAll(list);
+        DiffCallback.create(oldItems, dataModelList, m_RecycleAdapter);
+        oldItems.clear();
+        oldItems.addAll(dataModelList);
+        m_recycleView.stopNestedScroll();
     }
+
+
+
 
 
     @Override
@@ -186,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                     default:
                         break;
                 }
-               item.setChecked(true);
+                item.setChecked(true);
                 m_drawerLayout.closeDrawers();
                 return true;
             }
