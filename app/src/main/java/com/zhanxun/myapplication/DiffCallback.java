@@ -1,7 +1,13 @@
 package com.zhanxun.myapplication;
 
-import android.support.annotation.NonNull;
-import android.support.v7.util.DiffUtil;
+
+
+
+
+
+import androidx.recyclerview.widget.DiffUtil;
+
+import androidx.annotation.NonNull;
 
 import com.zhanxun.myapplication.bean.MultiNewsArticleDataModel;
 

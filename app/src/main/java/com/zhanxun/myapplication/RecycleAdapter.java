@@ -1,13 +1,14 @@
 package com.zhanxun.myapplication;
 
 import android.content.Context;
-import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -56,11 +57,11 @@ public class RecycleAdapter extends RecyclerView.Adapter {
 
     class ItemViewHolder extends RecyclerView.ViewHolder{
         private TextView m_text;
-       // private ImageView m_imageView;
+        // private ImageView m_imageView;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
-          //  m_imageView= (ImageView) itemView.findViewById(R.id.img);
+            //  m_imageView= (ImageView) itemView.findViewById(R.id.img);
             m_text= (TextView) itemView.findViewById(R.id.txt);
         }
     }
